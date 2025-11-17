@@ -13,11 +13,11 @@ locals {
     "sheets.googleapis.com",
     "tasks.googleapis.com",
   ]
-  
+
   # APIs required in WIF project for cross-project operations
   # When using a service account from another project, certain APIs must be enabled there too
   wif_project_apis = [
-    "sqladmin.googleapis.com",  # Required for Cloud SQL operations
+    "sqladmin.googleapis.com", # Required for Cloud SQL operations
   ]
 }
 
