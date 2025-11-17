@@ -139,7 +139,9 @@ module "n8n_ibkr" {
 | oauth_setup_instructions | Instructions for setting up OAuth credentials manually |
 | ib_gateway_connection_info | Information about connecting to IB Gateway from n8n |
 
-## Connecting to IB Gateway from n8n
+## IB Gateway Configuration
+
+### Connecting to IB Gateway from n8n
 
 The IB Gateway container runs as a sidecar in the same Cloud Run service as n8n. Both containers share the same network namespace, allowing n8n workflows to connect to IB Gateway via `localhost`.
 
@@ -149,8 +151,6 @@ From within n8n workflows, connect to IB Gateway at:
 
 The IB Gateway API is only accessible from within the Cloud Run service and is not exposed externally for security reasons.
 
-## IB Gateway Configuration
-
 ### Authentication
 
 IB Gateway credentials are configured via Terraform variables and stored securely in Google Secret Manager:
@@ -159,30 +159,6 @@ IB Gateway credentials are configured via Terraform variables and stored securel
 - **`ib_gateway_tws_password`**: Your Interactive Brokers account password (required)
 
 These credentials are automatically stored in Secret Manager and injected into the IB Gateway container at runtime. Never hardcode credentials in your Terraform files - use variables or environment variables.
-
-### Trading Mode
-
-Set the trading mode using the `ib_gateway_trading_mode` variable:
-
-- **`paper`**: Connect to paper trading account (default, recommended for testing)
-- **`live`**: Connect to live trading account
-
-When using paper trading, set `ib_gateway_tws_port` to `4001`. For live trading, use `7497`.
-
-### Port Configuration
-
-- **`ib_gateway_tws_port`**: The TWS port to connect to (default: `4001` for paper trading)
-  - Paper trading: `4001`
-  - Live trading: `7497`
-- **`ib_gateway_container_port`**: The container port where IB Gateway API listens (default: `4001`)
-
-### Read-Only API Mode
-
-Enable read-only API mode to prevent accidental trades:
-
-- **`ib_gateway_read_only_api`**: Set to `true` to enable read-only mode (default: `false`)
-
-When enabled, the IB Gateway API will reject any trading operations, allowing only read operations like market data and account information.
 
 ### Two-Factor Authentication (2FA)
 
