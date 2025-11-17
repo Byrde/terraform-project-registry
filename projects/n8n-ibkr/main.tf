@@ -398,10 +398,6 @@ resource "google_cloud_run_v2_service" "n8n_ibkr" {
       name  = "ib-gateway"
       image = var.ib_gateway_image
 
-      ports {
-        container_port = var.ib_gateway_container_port
-      }
-
       resources {
         limits = {
           cpu    = var.ib_gateway_cpu
