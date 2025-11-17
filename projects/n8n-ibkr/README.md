@@ -107,7 +107,7 @@ module "n8n_ibkr" {
 
 | Name | Description | Type | Required | Default |
 |------|-------------|------|----------|---------|
-| ib_gateway_image | IB Gateway Docker image | string | no | `gnzsnz/ib-gateway-docker:latest` |
+| ib_gateway_version | IB Gateway Docker image version/tag | string | no | `latest` |
 | ib_gateway_tws_userid | Interactive Brokers TWS user ID | string | yes | - |
 | ib_gateway_tws_password | Interactive Brokers TWS password | string | yes | - |
 | ib_gateway_tws_port | TWS port (4001 for paper trading, 7497 for live) | number | no | `4001` |

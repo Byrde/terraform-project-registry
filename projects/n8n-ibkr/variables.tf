@@ -119,10 +119,10 @@ variable "db_tier" {
 }
 
 # IB Gateway Docker image configuration
-variable "ib_gateway_image" {
-  description = "IB Gateway Docker image"
+variable "ib_gateway_version" {
+  description = "IB Gateway Docker image version/tag"
   type        = string
-  default     = "gnzsnz/ib-gateway-docker:latest"
+  default     = "latest"
 }
 
 variable "ib_gateway_tws_userid" {

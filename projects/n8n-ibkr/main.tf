@@ -396,7 +396,7 @@ resource "google_cloud_run_v2_service" "n8n_ibkr" {
     # IB Gateway sidecar container
     containers {
       name  = "ib-gateway"
-      image = var.ib_gateway_image
+      image = "gnzsnz/ib-gateway:${var.ib_gateway_version}"
 
       resources {
         limits = {
