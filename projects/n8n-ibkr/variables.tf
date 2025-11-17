@@ -45,6 +45,12 @@ variable "cloud_run_memory" {
   default     = "512Mi"
 }
 
+variable "cloud_run_deletion_protection" {
+  description = "Enable deletion protection for Cloud Run service"
+  type        = bool
+  default     = false
+}
+
 # Cloud SQL configuration
 variable "db_disk_size" {
   description = "Disk size for Cloud SQL instance in GB"

@@ -258,10 +258,11 @@ resource "google_secret_manager_secret_iam_member" "ib_gateway_password_access" 
 
 # Cloud Run service with n8n and IB Gateway sidecar
 resource "google_cloud_run_v2_service" "n8n_ibkr" {
-  name     = "n8n-ibkr"
-  project  = var.project_id
-  location = var.region
-  ingress  = "INGRESS_TRAFFIC_ALL"
+  name               = "n8n-ibkr"
+  project            = var.project_id
+  location           = var.region
+  ingress            = "INGRESS_TRAFFIC_ALL"
+  deletion_protection = var.cloud_run_deletion_protection
 
   template {
     service_account = google_service_account.n8n_service_account.email
