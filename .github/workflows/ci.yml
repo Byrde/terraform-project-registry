@@ -14,6 +14,7 @@ jobs:
         uses: Byrde/github-reusable-workflows/actions/validate-terraform@main
         with:
           terraform_version: '>=1.7'
+          search_path: 'projects'
 
   semantic-release:
     name: Semantic Release
