@@ -288,11 +288,16 @@ resource "google_cloud_run_v2_service" "n8n_ibkr" {
         container_port = 5678
       }
 
-      # Install IBKR node from GitHub on startup
+      # Install IBKR node from GitHub on startup (non-blocking, continues even if install fails)
       command = [
         "sh",
         "-c",
-        "npm install github:byrde/terraform-project-registry#main:projects/n8n-ibkr/nodes/n8n-ibkr-node --prefix /home/node/.n8n/custom && exec n8n start"
+        <<-EOT
+          echo "Installing IBKR node from GitHub (non-blocking)..."
+          npm install github:byrde/terraform-project-registry#main:projects/n8n-ibkr/nodes/n8n-ibkr-node --prefix /home/node/.n8n/custom --no-save --loglevel=error || echo "Warning: IBKR node installation failed or timed out, n8n will start without it"
+          echo "Starting n8n..."
+          exec n8n start
+        EOT
       ]
 
       volume_mounts {
