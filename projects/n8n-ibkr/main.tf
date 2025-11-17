@@ -288,6 +288,13 @@ resource "google_cloud_run_v2_service" "n8n_ibkr" {
         container_port = 5678
       }
 
+      # Install IBKR node from GitHub on startup
+      command = [
+        "sh",
+        "-c",
+        "npm install github:byrde/terraform-project-registry#main:projects/n8n-ibkr/nodes/n8n-ibkr-node --prefix /home/node/.n8n/custom && exec n8n start"
+      ]
+
       volume_mounts {
         name       = "cloudsql"
         mount_path = "/cloudsql"

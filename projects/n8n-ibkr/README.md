@@ -4,6 +4,8 @@ Deploys n8n workflow automation platform on GCP using Cloud Run and Cloud SQL Po
 
 This module includes all the infrastructure from the `n8n` module (database, secrets, APIs, service account) and extends it with an IB Gateway sidecar container running in the same Cloud Run service. Only one Cloud Run service is created with both containers.
 
+**The IBKR custom node is automatically installed** when the container starts, so you can immediately use IBKR operations in your n8n workflows without any additional setup.
+
 ## Usage
 
 ### Basic Usage
@@ -139,6 +141,29 @@ module "n8n_ibkr" {
 | webhook_url_setup | Instructions for setting up WEBHOOK_URL |
 | oauth_setup_instructions | Instructions for setting up OAuth credentials manually |
 | ib_gateway_connection_info | Information about connecting to IB Gateway from n8n |
+
+## IBKR Node
+
+### Automatic Installation
+
+The IBKR custom node is **automatically installed** when the n8n container starts. The node is installed from GitHub (`github:byrde/terraform-project-registry#main:projects/n8n-ibkr/nodes/n8n-ibkr-node`) and is immediately available in your n8n workflows.
+
+**Note**: This is a **custom node**, not an official n8n catalog node. It will appear in your n8n node panel when you search for "IBKR", but it won't be listed in the official n8n node catalog.
+
+**No manual installation required** - just deploy and start using the IBKR node!
+
+### Using the IBKR Node
+
+1. **Open n8n** and create a new workflow
+2. **Add the IBKR node** - search for "IBKR" in the node panel
+3. **Configure credentials**:
+   - Base URL: `http://localhost:4001/v1/api` (paper) or `http://localhost:7497/v1/api` (live)
+   - Account ID: Your Interactive Brokers account ID
+4. **Select an operation**:
+   - Health Check
+   - List Positions
+   - Buy Stock
+   - Sell Stock
 
 ## IB Gateway Configuration
 
