@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  validate-terraform:
+    name: Validate Terraform
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate Terraform Modules
+        uses: Byrde/github-reusable-workflows/actions/validate-terraform@main
+        with:
+          terraform_version: '>=1.7'
+
+  semantic-release:
+    name: Semantic Release
+    runs-on: ubuntu-latest
+    needs: validate-terraform
+    permissions:
+      contents: write
+    steps:
+      - name: Create Release
+        uses: Byrde/github-reusable-workflows/actions/semantic-release@main
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          should-create-release: 'true'
+

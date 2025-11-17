@@ -1,0 +1,16 @@
+# OS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+.cursor/
+.cursorrules
+
+# Terraform
+**/*.tfstate
+**/*.tfstate.backup
+**/*.terraform.tfstate.*.backup
+**/*.tfvars
+**/.terraform/
+**/.terraform.lock.hcl
