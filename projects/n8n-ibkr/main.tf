@@ -286,6 +286,16 @@ resource "google_cloud_run_v2_service" "n8n_ibkr" {
         container_port = 5678
       }
 
+      startup_probe {
+        tcp_socket {
+          port = 5678
+        }
+        initial_delay_seconds = 0
+        timeout_seconds      = 1
+        period_seconds       = 3
+        failure_threshold    = 200
+      }
+
       # Install IBKR node and wait for IB Gateway health check before starting n8n
       command = [
         "sh",
