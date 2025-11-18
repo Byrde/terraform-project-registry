@@ -119,6 +119,9 @@ module "n8n_ibkr" {
 | ib_gateway_second_factor_device | Device identifier for 2FA (e.g., 'IB Key' or device ID) | string | no | `""` |
 | ib_gateway_relogin_after_2fa_timeout | Whether to attempt relogin after 2FA timeout (yes/no) | string | no | `"yes"` |
 | ib_gateway_2fa_timeout_seconds | Seconds to wait for 2FA authentication before timing out | number | no | `300` |
+| ib_gateway_health_check_timeout_seconds | Maximum time in seconds to wait for IB Gateway to become healthy before starting n8n | number | no | `300` |
+| ib_gateway_health_check_interval_seconds | Interval in seconds between IB Gateway health check attempts | number | no | `5` |
+| ib_gateway_debug_logs | Enable debug logs for IB Gateway (sets LOG_LEVEL=DEBUG) | bool | no | `false` |
 
 ## Outputs
 
@@ -173,6 +176,17 @@ From within n8n workflows, connect to IB Gateway at:
 - **Port**: Automatically inferred from `ib_gateway_trading_mode` (4001 for paper, 7497 for live)
 
 The IB Gateway API is only accessible from within the Cloud Run service and is not exposed externally for security reasons.
+
+### Health Check
+
+n8n automatically performs a health check on IB Gateway before starting. The startup script waits for IB Gateway to become healthy and reachable at `http://localhost:${port}/v1/api/iserver/auth/status` before starting n8n. This ensures that IB Gateway is ready when n8n workflows try to use it.
+
+**Health Check Configuration:**
+- **Timeout**: Default 300 seconds (5 minutes) - configurable via `ib_gateway_health_check_timeout_seconds`
+- **Interval**: Default 5 seconds between checks - configurable via `ib_gateway_health_check_interval_seconds`
+- **Behavior**: n8n will **not start** until IB Gateway becomes healthy. If IB Gateway doesn't become healthy within the timeout, the container will exit with an error and Cloud Run will restart it.
+
+This ensures IB Gateway is fully ready before n8n starts processing workflows. This is particularly important when IB Gateway requires 2FA authentication, as it gives time for manual approval before n8n starts.
 
 ### Authentication
 

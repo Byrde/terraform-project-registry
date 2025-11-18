@@ -124,6 +124,12 @@ variable "db_tier" {
   default     = "db-f1-micro"
 }
 
+variable "n8n_debug_logs" {
+  description = "Enable debug logs for n8n (sets N8N_LOG_LEVEL=debug)"
+  type        = bool
+  default     = false
+}
+
 # IB Gateway Docker image configuration
 variable "ib_gateway_version" {
   description = "IB Gateway Docker image version/tag"
@@ -193,8 +199,20 @@ variable "ib_gateway_2fa_timeout_seconds" {
   default     = 300
 }
 
-variable "n8n_debug_logs" {
-  description = "Enable debug logs for n8n (sets N8N_LOG_LEVEL=debug)"
+variable "ib_gateway_health_check_timeout_seconds" {
+  description = "Maximum time in seconds to wait for IB Gateway to become healthy before starting n8n"
+  type        = number
+  default     = 300
+}
+
+variable "ib_gateway_health_check_interval_seconds" {
+  description = "Interval in seconds between IB Gateway health check attempts"
+  type        = number
+  default     = 5
+}
+
+variable "ib_gateway_debug_logs" {
+  description = "Enable debug logs for IB Gateway (sets LOG_LEVEL=DEBUG)"
   type        = bool
   default     = false
 }

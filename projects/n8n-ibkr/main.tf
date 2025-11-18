@@ -285,13 +285,38 @@ resource "google_cloud_run_v2_service" "n8n_ibkr" {
         container_port = 5678
       }
 
-      # Install IBKR node from GitHub on startup (non-blocking, continues even if install fails)
+      # Install IBKR node and wait for IB Gateway health check before starting n8n
       command = [
         "sh",
         "-c",
         <<-EOT
           echo "Installing IBKR node from GitHub (non-blocking)..."
           npm install github:byrde/terraform-project-registry#main:projects/n8n-ibkr/nodes/n8n-ibkr-node --prefix /home/node/.n8n/custom --no-save --loglevel=error || echo "Warning: IBKR node installation failed or timed out, n8n will start without it"
+          
+          echo "Waiting for IB Gateway to become healthy..."
+          IB_GATEWAY_URL="http://localhost:${local.ib_gateway_port}/v1/api/iserver/auth/status"
+          MAX_WAIT=${var.ib_gateway_health_check_timeout_seconds}
+          INTERVAL=${var.ib_gateway_health_check_interval_seconds}
+          ELAPSED=0
+          HEALTHY=0
+          
+          while [ $ELAPSED -lt $MAX_WAIT ]; do
+            if curl -f -s --max-time 5 "$IB_GATEWAY_URL" > /dev/null 2>&1; then
+              echo "IB Gateway is healthy and reachable"
+              HEALTHY=1
+              break
+            fi
+            echo "IB Gateway not ready yet (waited ${ELAPSED}s), retrying in ${INTERVAL}s..."
+            sleep $INTERVAL
+            ELAPSED=$((ELAPSED + INTERVAL))
+          done
+          
+          if [ $HEALTHY -eq 0 ]; then
+            echo "ERROR: IB Gateway health check failed after ${MAX_WAIT}s. n8n will not start."
+            echo "Please check IB Gateway container logs and ensure it is running correctly."
+            exit 1
+          fi
+          
           echo "Starting n8n..."
           exec n8n start
         EOT
@@ -484,6 +509,14 @@ resource "google_cloud_run_v2_service" "n8n_ibkr" {
       env {
         name  = "SecondFactorAuthenticationExitInterval"
         value = tostring(var.ib_gateway_2fa_timeout_seconds)
+      }
+
+      dynamic "env" {
+        for_each = var.ib_gateway_debug_logs ? [1] : []
+        content {
+          name  = "LOG_LEVEL"
+          value = "DEBUG"
+        }
       }
     }
   }
