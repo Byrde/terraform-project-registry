@@ -205,3 +205,9 @@ variable "ib_gateway_2fa_timeout_seconds" {
   default     = 300
 }
 
+variable "n8n_debug_logs" {
+  description = "Enable debug logs for n8n (sets N8N_LOG_LEVEL=debug)"
+  type        = bool
+  default     = false
+}
+

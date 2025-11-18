@@ -404,6 +404,14 @@ resource "google_cloud_run_v2_service" "n8n_ibkr" {
           value = var.webhook_url
         }
       }
+
+      dynamic "env" {
+        for_each = var.n8n_debug_logs ? [1] : []
+        content {
+          name  = "N8N_LOG_LEVEL"
+          value = "debug"
+        }
+      }
     }
 
     # IB Gateway sidecar container
