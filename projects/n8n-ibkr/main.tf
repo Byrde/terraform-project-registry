@@ -263,6 +263,7 @@ resource "google_cloud_run_v2_service" "n8n_ibkr" {
 
   template {
     service_account = google_service_account.n8n_service_account.email
+    timeout         = "${var.cloud_run_timeout_seconds}s"
 
     scaling {
       min_instance_count = 1

@@ -51,6 +51,12 @@ variable "cloud_run_deletion_protection" {
   default     = false
 }
 
+variable "cloud_run_timeout_seconds" {
+  description = "Timeout in seconds for Cloud Run service startup. Should be longer than ib_gateway_health_check_timeout_seconds to allow time for health check and n8n startup"
+  type        = number
+  default     = 600
+}
+
 # Cloud SQL configuration
 variable "db_disk_size" {
   description = "Disk size for Cloud SQL instance in GB"
@@ -216,4 +222,3 @@ variable "ib_gateway_debug_logs" {
   type        = bool
   default     = false
 }
-

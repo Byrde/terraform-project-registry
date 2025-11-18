@@ -85,6 +85,7 @@ module "n8n_ibkr" {
 | cloud_run_cpu | CPU allocation for Cloud Run container (e.g., '1', '2', '1000m') | string | no | `"1"` |
 | cloud_run_memory | Memory allocation for Cloud Run container (e.g., '512Mi', '1Gi', '2Gi') | string | no | `"512Mi"` |
 | cloud_run_deletion_protection | Enable deletion protection for Cloud Run service | bool | no | `false` |
+| cloud_run_timeout_seconds | Timeout in seconds for Cloud Run service startup. Should be longer than ib_gateway_health_check_timeout_seconds to allow time for health check and n8n startup | number | no | `600` |
 
 **Note**: Instance count is fixed at 1 (min=1, max=1) to ensure consistent IB Gateway connection. IB Gateway requires a persistent connection, and scaling would disrupt this connection.
 
