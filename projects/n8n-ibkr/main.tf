@@ -300,19 +300,19 @@ resource "google_cloud_run_v2_service" "n8n_ibkr" {
           ELAPSED=0
           HEALTHY=0
           
-          while [ $ELAPSED -lt $MAX_WAIT ]; do
-            if curl -f -s --max-time 5 "$IB_GATEWAY_URL" > /dev/null 2>&1; then
+          while [ $$ELAPSED -lt $$MAX_WAIT ]; do
+            if curl -f -s --max-time 5 "$$IB_GATEWAY_URL" > /dev/null 2>&1; then
               echo "IB Gateway is healthy and reachable"
               HEALTHY=1
               break
             fi
-            echo "IB Gateway not ready yet (waited ${ELAPSED}s), retrying in ${INTERVAL}s..."
-            sleep $INTERVAL
-            ELAPSED=$((ELAPSED + INTERVAL))
+            echo "IB Gateway not ready yet (waited $$ELAPSEDs), retrying in $$INTERVALs..."
+            sleep $$INTERVAL
+            ELAPSED=$$((ELAPSED + INTERVAL))
           done
           
-          if [ $HEALTHY -eq 0 ]; then
-            echo "ERROR: IB Gateway health check failed after ${MAX_WAIT}s. n8n will not start."
+          if [ $$HEALTHY -eq 0 ]; then
+            echo "ERROR: IB Gateway health check failed after $$MAX_WAITs. n8n will not start."
             echo "Please check IB Gateway container logs and ensure it is running correctly."
             exit 1
           fi
