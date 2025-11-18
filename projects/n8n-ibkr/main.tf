@@ -14,11 +14,8 @@ locals {
     "tasks.googleapis.com",
   ]
 
-  # APIs required in WIF project for cross-project operations
-  # When using a service account from another project, certain APIs must be enabled there too
-  wif_project_apis = [
-    "sqladmin.googleapis.com", # Required for Cloud SQL operations
-  ]
+  # IB Gateway port based on trading mode (4001 for paper, 7497 for live)
+  ib_gateway_port = var.ib_gateway_trading_mode == "live" ? 7497 : 4001
 }
 
 # Enable required APIs in project
@@ -32,7 +29,7 @@ resource "google_project_service" "apis" {
 
 # Enable required APIs in WIF project (for cross-project operations)
 resource "google_project_service" "wif_apis" {
-  for_each = var.wif_project_id != null ? toset(local.wif_project_apis) : toset([])
+  for_each = var.wif_project_id != null ? toset(local.project_apis) : toset([])
 
   project            = var.wif_project_id
   service            = each.value
@@ -447,8 +444,18 @@ resource "google_cloud_run_v2_service" "n8n_ibkr" {
       }
 
       env {
+        name  = "PORT"
+        value = tostring(local.ib_gateway_port)
+      }
+
+      env {
         name  = "TWS_PORT"
-        value = tostring(var.ib_gateway_tws_port)
+        value = tostring(local.ib_gateway_port)
+      }
+
+      env {
+        name  = "CPGW_PORT"
+        value = tostring(local.ib_gateway_port)
       }
 
       env {

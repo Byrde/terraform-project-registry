@@ -56,8 +56,7 @@ module "n8n_ibkr" {
   # IB Gateway configuration
   ib_gateway_tws_userid   = "your_ibkr_username"
   ib_gateway_tws_password = "your_ibkr_password"
-  ib_gateway_trading_mode = "live"
-  ib_gateway_tws_port     = 7497
+  ib_gateway_trading_mode = "live"  # Port automatically set to 7497 for live, 4001 for paper
   ib_gateway_read_only_api = false
   
   # IB Gateway container resources
@@ -113,12 +112,10 @@ module "n8n_ibkr" {
 | ib_gateway_version | IB Gateway Docker image version/tag | string | no | `latest` |
 | ib_gateway_tws_userid | Interactive Brokers TWS user ID | string | yes | - |
 | ib_gateway_tws_password | Interactive Brokers TWS password | string | yes | - |
-| ib_gateway_tws_port | TWS port (4001 for paper trading, 7497 for live) | number | no | `4001` |
 | ib_gateway_read_only_api | Enable read-only API mode | bool | no | `false` |
-| ib_gateway_trading_mode | Trading mode: 'paper' or 'live' | string | no | `paper` |
+| ib_gateway_trading_mode | Trading mode: 'paper' or 'live'. Port is automatically inferred (4001 for paper, 7497 for live) | string | no | `paper` |
 | ib_gateway_cpu | CPU allocation for IB Gateway container (e.g., '1', '2', '1000m') | string | no | `"1"` |
 | ib_gateway_memory | Memory allocation for IB Gateway container (e.g., '512Mi', '1Gi', '2Gi') | string | no | `"1Gi"` |
-| ib_gateway_container_port | Container port for IB Gateway API | number | no | `4001` |
 | ib_gateway_second_factor_device | Device identifier for 2FA (e.g., 'IB Key' or device ID) | string | no | `""` |
 | ib_gateway_relogin_after_2fa_timeout | Whether to attempt relogin after 2FA timeout (yes/no) | string | no | `"yes"` |
 | ib_gateway_2fa_timeout_seconds | Seconds to wait for 2FA authentication before timing out | number | no | `300` |
@@ -136,7 +133,7 @@ module "n8n_ibkr" {
 | n8n_basic_auth_user | Username for n8n basic authentication |
 | n8n_basic_auth_password | Instructions for retrieving password from Secret Manager |
 | ib_gateway_api_url | IB Gateway API URL (accessible from within the Cloud Run service) |
-| ib_gateway_container_port | Container port for IB Gateway API |
+| ib_gateway_port | IB Gateway API port (inferred from trading mode: 4001 for paper, 7497 for live) |
 | oauth_redirect_uri | OAuth redirect URI for n8n Google integration |
 | webhook_url_setup | Instructions for setting up WEBHOOK_URL |
 | oauth_setup_instructions | Instructions for setting up OAuth credentials manually |
@@ -172,8 +169,8 @@ The IBKR custom node is **automatically installed** when the n8n container start
 The IB Gateway container runs as a sidecar in the same Cloud Run service as n8n. Both containers share the same network namespace, allowing n8n workflows to connect to IB Gateway via `localhost`.
 
 From within n8n workflows, connect to IB Gateway at:
-- **URL**: `http://localhost:4001` (or the port specified in `ib_gateway_container_port`)
-- **Port**: Default is `4001` for paper trading, `7497` for live trading
+- **URL**: `http://localhost:4001` (paper trading) or `http://localhost:7497` (live trading)
+- **Port**: Automatically inferred from `ib_gateway_trading_mode` (4001 for paper, 7497 for live)
 
 The IB Gateway API is only accessible from within the Cloud Run service and is not exposed externally for security reasons.
 
@@ -217,7 +214,7 @@ Increase these if you experience performance issues or timeouts.
 **Problem**: Cannot connect to IB Gateway from n8n workflows
 
 **Solutions**:
-- Verify the container port matches your connection URL: `http://localhost:${ib_gateway_container_port}`
+- Verify the port matches your trading mode: `http://localhost:4001` for paper trading, `http://localhost:7497` for live trading
 - Check that both containers are running in the same Cloud Run service
 - Review Cloud Run logs for the `ib-gateway` container to see connection errors
 
@@ -241,8 +238,8 @@ Increase these if you experience performance issues or timeouts.
 **Problem**: Port already in use or connection refused
 
 **Solutions**:
-- Ensure `ib_gateway_container_port` doesn't conflict with the n8n port (5678)
-- Verify the port is correctly configured in your n8n workflow HTTP requests
+- Ensure the IB Gateway port (4001 or 7497) doesn't conflict with the n8n port (5678)
+- Verify the port matches your trading mode in your n8n workflow HTTP requests
 - Check Cloud Run service logs for port binding errors
 
 ### Container Startup Issues

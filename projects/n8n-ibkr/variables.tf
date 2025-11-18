@@ -143,12 +143,6 @@ variable "ib_gateway_tws_password" {
   sensitive   = true
 }
 
-variable "ib_gateway_tws_port" {
-  description = "TWS port (default: 4001 for paper trading, 7497 for live)"
-  type        = number
-  default     = 4001
-}
-
 variable "ib_gateway_read_only_api" {
   description = "Enable read-only API mode"
   type        = bool
@@ -175,12 +169,6 @@ variable "ib_gateway_memory" {
   description = "Memory allocation for IB Gateway container (e.g., '512Mi', '1Gi', '2Gi')"
   type        = string
   default     = "1Gi"
-}
-
-variable "ib_gateway_container_port" {
-  description = "Container port for IB Gateway API"
-  type        = number
-  default     = 4001
 }
 
 variable "ib_gateway_second_factor_device" {

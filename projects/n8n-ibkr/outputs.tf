@@ -41,12 +41,12 @@ output "n8n_basic_auth_password" {
 
 output "ib_gateway_api_url" {
   description = "IB Gateway API URL (accessible from within the Cloud Run service)"
-  value       = "http://localhost:${var.ib_gateway_container_port}"
+  value       = "http://localhost:${local.ib_gateway_port}"
 }
 
-output "ib_gateway_container_port" {
-  description = "Container port for IB Gateway API"
-  value       = var.ib_gateway_container_port
+output "ib_gateway_port" {
+  description = "IB Gateway API port (inferred from trading mode: 4001 for paper, 7497 for live)"
+  value       = local.ib_gateway_port
 }
 
 output "oauth_redirect_uri" {
@@ -93,8 +93,8 @@ output "ib_gateway_connection_info" {
     IB Gateway is running as a sidecar container in the same Cloud Run service.
     
     From within n8n workflows, you can connect to IB Gateway at:
-    - URL: http://localhost:${var.ib_gateway_container_port}
-    - Port: ${var.ib_gateway_container_port}
+    - URL: http://localhost:${local.ib_gateway_port}
+    - Port: ${local.ib_gateway_port} (inferred from trading mode: 4001 for paper, 7497 for live)
     - Trading Mode: ${var.ib_gateway_trading_mode}
     - Read-Only API: ${var.ib_gateway_read_only_api}
     
