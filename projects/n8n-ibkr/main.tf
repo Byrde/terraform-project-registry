@@ -296,13 +296,17 @@ resource "google_cloud_run_v2_service" "n8n_ibkr" {
         failure_threshold    = 200
       }
 
-      # Install IBKR node and wait for IB Gateway health check before starting n8n
+      # Install IBKR node and start n8n, then wait for IB Gateway in background
       command = [
         "sh",
         "-c",
         <<-EOT
           echo "Installing IBKR node from GitHub (non-blocking)..."
           npm install github:byrde/terraform-project-registry#main:projects/n8n-ibkr/nodes/n8n-ibkr-node --prefix /home/node/.n8n/custom --no-save --loglevel=error || echo "Warning: IBKR node installation failed or timed out, n8n will start without it"
+          
+          echo "Starting n8n in background..."
+          n8n start &
+          N8N_PID=$$!
           
           echo "Waiting for IB Gateway to become healthy..."
           IB_GATEWAY_URL="http://localhost:${local.ib_gateway_port}/v1/api/iserver/auth/status"
@@ -323,13 +327,13 @@ resource "google_cloud_run_v2_service" "n8n_ibkr" {
           done
           
           if [ $$HEALTHY -eq 0 ]; then
-            echo "ERROR: IB Gateway health check failed after $$MAX_WAITs. n8n will not start."
-            echo "Please check IB Gateway container logs and ensure it is running correctly."
-            exit 1
+            echo "WARNING: IB Gateway health check failed after $$MAX_WAITs."
+            echo "n8n is running but IB Gateway may not be ready. Check IB Gateway container logs."
+          else
+            echo "IB Gateway is healthy. n8n is ready to process workflows."
           fi
           
-          echo "Starting n8n..."
-          exec n8n start
+          wait $$N8N_PID
         EOT
       ]
 
