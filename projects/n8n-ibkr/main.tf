@@ -296,47 +296,6 @@ resource "google_cloud_run_v2_service" "n8n_ibkr" {
         failure_threshold    = 200
       }
 
-      # Install IBKR node and start n8n, then wait for IB Gateway in background
-      command = [
-        "sh",
-        "-c",
-        <<-EOT
-          echo "Installing IBKR node from GitHub (non-blocking)..."
-          npm install github:byrde/terraform-project-registry#main:projects/n8n-ibkr/nodes/n8n-ibkr-node --prefix /home/node/.n8n/custom --no-save --loglevel=error || echo "Warning: IBKR node installation failed or timed out, n8n will start without it"
-          
-          echo "Starting n8n in background..."
-          n8n start &
-          N8N_PID=$$!
-          
-          echo "Waiting for IB Gateway to become healthy..."
-          IB_GATEWAY_URL="http://localhost:${local.ib_gateway_port}/v1/api/iserver/auth/status"
-          MAX_WAIT=${var.ib_gateway_health_check_timeout_seconds}
-          INTERVAL=${var.ib_gateway_health_check_interval_seconds}
-          ELAPSED=0
-          HEALTHY=0
-          
-          while [ $$ELAPSED -lt $$MAX_WAIT ]; do
-            if curl -f -s --max-time 5 "$$IB_GATEWAY_URL" > /dev/null 2>&1; then
-              echo "IB Gateway is healthy and reachable"
-              HEALTHY=1
-              break
-            fi
-            echo "IB Gateway not ready yet (waited $$ELAPSEDs), retrying in $$INTERVALs..."
-            sleep $$INTERVAL
-            ELAPSED=$$((ELAPSED + INTERVAL))
-          done
-          
-          if [ $$HEALTHY -eq 0 ]; then
-            echo "WARNING: IB Gateway health check failed after $$MAX_WAITs."
-            echo "n8n is running but IB Gateway may not be ready. Check IB Gateway container logs."
-          else
-            echo "IB Gateway is healthy. n8n is ready to process workflows."
-          fi
-          
-          wait $$N8N_PID
-        EOT
-      ]
-
       volume_mounts {
         name       = "cloudsql"
         mount_path = "/cloudsql"

@@ -4,8 +4,6 @@ Deploys n8n workflow automation platform on GCP using Cloud Run and Cloud SQL Po
 
 This module includes all the infrastructure from the `n8n` module (database, secrets, APIs, service account) and extends it with an IB Gateway sidecar container running in the same Cloud Run service. Only one Cloud Run service is created with both containers.
 
-**The IBKR custom node is automatically installed** when the container starts, so you can immediately use IBKR operations in your n8n workflows without any additional setup.
-
 ## Usage
 
 ### Basic Usage
@@ -85,7 +83,7 @@ module "n8n_ibkr" {
 | cloud_run_cpu | CPU allocation for Cloud Run container (e.g., '1', '2', '1000m') | string | no | `"1"` |
 | cloud_run_memory | Memory allocation for Cloud Run container (e.g., '512Mi', '1Gi', '2Gi') | string | no | `"512Mi"` |
 | cloud_run_deletion_protection | Enable deletion protection for Cloud Run service | bool | no | `false` |
-| cloud_run_timeout_seconds | Timeout in seconds for Cloud Run service startup. Should be longer than ib_gateway_health_check_timeout_seconds to allow time for health check and n8n startup | number | no | `600` |
+| cloud_run_timeout_seconds | Timeout in seconds for Cloud Run service startup. | number | no | `600` |
 
 **Note**: Instance count is fixed at 1 (min=1, max=1) to ensure consistent IB Gateway connection. IB Gateway requires a persistent connection, and scaling would disrupt this connection.
 
@@ -120,8 +118,6 @@ module "n8n_ibkr" {
 | ib_gateway_second_factor_device | Device identifier for 2FA (e.g., 'IB Key' or device ID) | string | no | `""` |
 | ib_gateway_relogin_after_2fa_timeout | Whether to attempt relogin after 2FA timeout (yes/no) | string | no | `"yes"` |
 | ib_gateway_2fa_timeout_seconds | Seconds to wait for 2FA authentication before timing out | number | no | `300` |
-| ib_gateway_health_check_timeout_seconds | Maximum time in seconds to wait for IB Gateway to become healthy before starting n8n | number | no | `300` |
-| ib_gateway_health_check_interval_seconds | Interval in seconds between IB Gateway health check attempts | number | no | `5` |
 | ib_gateway_debug_logs | Enable debug logs for IB Gateway (sets LOG_LEVEL=DEBUG) | bool | no | `false` |
 
 ## Outputs
@@ -143,29 +139,6 @@ module "n8n_ibkr" {
 | oauth_setup_instructions | Instructions for setting up OAuth credentials manually |
 | ib_gateway_connection_info | Information about connecting to IB Gateway from n8n |
 
-## IBKR Node
-
-### Automatic Installation
-
-The IBKR custom node is **automatically installed** when the n8n container starts. The node is installed from GitHub (`github:byrde/terraform-project-registry#main:projects/n8n-ibkr/nodes/n8n-ibkr-node`) and is immediately available in your n8n workflows.
-
-**Note**: This is a **custom node**, not an official n8n catalog node. It will appear in your n8n node panel when you search for "IBKR", but it won't be listed in the official n8n node catalog.
-
-**No manual installation required** - just deploy and start using the IBKR node!
-
-### Using the IBKR Node
-
-1. **Open n8n** and create a new workflow
-2. **Add the IBKR node** - search for "IBKR" in the node panel
-3. **Configure credentials**:
-   - Base URL: `http://localhost:4001/v1/api` (paper) or `http://localhost:7497/v1/api` (live)
-   - Account ID: Your Interactive Brokers account ID
-4. **Select an operation**:
-   - Health Check
-   - List Positions
-   - Buy Stock
-   - Sell Stock
-
 ## IB Gateway Configuration
 
 ### Connecting to IB Gateway from n8n
@@ -177,17 +150,6 @@ From within n8n workflows, connect to IB Gateway at:
 - **Port**: Automatically inferred from `ib_gateway_trading_mode` (4001 for paper, 7497 for live)
 
 The IB Gateway API is only accessible from within the Cloud Run service and is not exposed externally for security reasons.
-
-### Health Check
-
-n8n automatically performs a health check on IB Gateway before starting. The startup script waits for IB Gateway to become healthy and reachable at `http://localhost:${port}/v1/api/iserver/auth/status` before starting n8n. This ensures that IB Gateway is ready when n8n workflows try to use it.
-
-**Health Check Configuration:**
-- **Timeout**: Default 300 seconds (5 minutes) - configurable via `ib_gateway_health_check_timeout_seconds`
-- **Interval**: Default 5 seconds between checks - configurable via `ib_gateway_health_check_interval_seconds`
-- **Behavior**: n8n will **not start** until IB Gateway becomes healthy. If IB Gateway doesn't become healthy within the timeout, the container will exit with an error and Cloud Run will restart it.
-
-This ensures IB Gateway is fully ready before n8n starts processing workflows. This is particularly important when IB Gateway requires 2FA authentication, as it gives time for manual approval before n8n starts.
 
 ### Authentication
 

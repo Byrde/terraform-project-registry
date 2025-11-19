@@ -52,7 +52,7 @@ variable "cloud_run_deletion_protection" {
 }
 
 variable "cloud_run_timeout_seconds" {
-  description = "Timeout in seconds for Cloud Run service startup. Should be longer than ib_gateway_health_check_timeout_seconds to allow time for health check and n8n startup"
+  description = "Timeout in seconds for Cloud Run service startup."
   type        = number
   default     = 600
 }
@@ -203,18 +203,6 @@ variable "ib_gateway_2fa_timeout_seconds" {
   description = "Seconds to wait for 2FA authentication before timing out"
   type        = number
   default     = 300
-}
-
-variable "ib_gateway_health_check_timeout_seconds" {
-  description = "Maximum time in seconds to wait for IB Gateway to become healthy before starting n8n"
-  type        = number
-  default     = 300
-}
-
-variable "ib_gateway_health_check_interval_seconds" {
-  description = "Interval in seconds between IB Gateway health check attempts"
-  type        = number
-  default     = 5
 }
 
 variable "ib_gateway_debug_logs" {
