@@ -522,16 +522,6 @@ resource "google_cloud_run_v2_service" "n8n_ibkr" {
       }
 
       env {
-        name  = "IBC_INI"
-        value = "/root/ibc/config.ini"
-      }
-
-      env {
-        name  = "TWS_SETTINGS_PATH"
-        value = "/root/Jts"
-      }
-
-      env {
         name  = "READ_ONLY_API"
         value = var.ib_gateway_read_only_api ? "yes" : "no"
       }
