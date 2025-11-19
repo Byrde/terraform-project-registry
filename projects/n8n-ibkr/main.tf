@@ -22,6 +22,10 @@ import os
 import logging
 from fastapi import FastAPI, HTTPException
 from ib_insync import IB, util
+import nest_asyncio
+
+# Apply nest_asyncio to allow nested event loops
+nest_asyncio.apply()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -47,6 +51,10 @@ async def connect_loop():
                 for port in PORTS:
                     try:
                         logger.info(f"Connecting to IB Gateway at {HOST}:{port}...")
+                        # Use run_until_complete if we are in a separate thread, but here we are in async loop
+                        # The issue is likely ib_insync trying to use its own loop or conflicting with uvicorn
+                        # With nest_asyncio applied, we should be safer.
+                        # Also, let's try to use the global loop explicitly if needed, but connectAsync should work.
                         await ib.connectAsync(HOST, port, clientId=CLIENT_ID)
                         logger.info(f"Connected to IB Gateway on port {port}")
                         break # Connected successfully
@@ -552,7 +560,7 @@ resource "google_cloud_run_v2_service" "n8n_ibkr" {
 
       # Install dependencies and run the bridge script
       command = ["/bin/sh", "-c"]
-      args    = ["pip install fastapi uvicorn ib_insync && echo \"$BRIDGE_SCRIPT_CONTENT\" > bridge.py && uvicorn bridge:app --host 127.0.0.1 --port 5000"]
+      args    = ["pip install fastapi uvicorn ib_insync nest_asyncio && echo \"$BRIDGE_SCRIPT_CONTENT\" > bridge.py && uvicorn bridge:app --host 127.0.0.1 --port 5000"]
     }
   }
 
