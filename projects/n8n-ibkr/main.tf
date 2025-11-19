@@ -536,16 +536,6 @@ resource "google_cloud_run_v2_service" "n8n_ibkr" {
         value = var.ib_gateway_read_only_api ? "yes" : "no"
       }
 
-      startup_probe {
-        tcp_socket {
-          port = 4001
-        }
-        initial_delay_seconds = 15
-        timeout_seconds      = 1
-        period_seconds       = 5
-        failure_threshold    = 60
-      }
-      
       # Disable VNC to save resources if not needed, or keep it for debugging
       # env {
       #   name  = "XVFB_IGNORE_XAUTH"
@@ -573,16 +563,6 @@ resource "google_cloud_run_v2_service" "n8n_ibkr" {
       # Install dependencies and run the bridge script
       command = ["/bin/sh", "-c"]
       args    = ["pip install fastapi uvicorn ib_insync && echo \"$BRIDGE_SCRIPT_CONTENT\" > bridge.py && uvicorn bridge:app --host 127.0.0.1 --port 5000"]
-      
-      startup_probe {
-        tcp_socket {
-          port = 5000
-        }
-        initial_delay_seconds = 10
-        timeout_seconds      = 1
-        period_seconds       = 5
-        failure_threshold    = 30
-      }
     }
   }
 
