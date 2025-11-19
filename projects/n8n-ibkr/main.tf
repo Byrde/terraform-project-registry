@@ -12,7 +12,82 @@ locals {
     "gmail.googleapis.com",
     "sheets.googleapis.com",
     "tasks.googleapis.com",
+    "compute.googleapis.com", # Required for some networking features
   ]
+
+  # Python bridge script to expose IB Gateway (TCP) via HTTP
+  ib_bridge_script = <<-EOT
+import asyncio
+import os
+import logging
+from fastapi import FastAPI, HTTPException
+from ib_insync import IB, util
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("ib-bridge")
+
+app = FastAPI()
+ib = IB()
+
+HOST = '127.0.0.1'
+PORTS = [4001, 4002] # Try both live (4001) and paper (4002) ports
+CLIENT_ID = 0  # 0 is usually the master client
+
+@app.on_event("startup")
+async def startup():
+    logger.info("Starting IB Bridge...")
+    # Start connection loop in background
+    asyncio.create_task(connect_loop())
+
+async def connect_loop():
+    while True:
+        try:
+            if not ib.isConnected():
+                for port in PORTS:
+                    try:
+                        logger.info(f"Connecting to IB Gateway at {HOST}:{port}...")
+                        await ib.connectAsync(HOST, port, clientId=CLIENT_ID)
+                        logger.info(f"Connected to IB Gateway on port {port}")
+                        break # Connected successfully
+                    except Exception as e:
+                        logger.warning(f"Failed to connect to port {port}: {e}")
+                
+                if not ib.isConnected():
+                    logger.error("Could not connect to any IB Gateway port. Retrying in 5s...")
+        except Exception as e:
+            logger.error(f"Connection loop error: {e}")
+        
+        await asyncio.sleep(5)
+
+@app.get("/")
+def root():
+    return {"status": "IB Bridge Running", "connected": ib.isConnected()}
+
+@app.get("/health")
+async def health():
+    # Simple retry logic for health check
+    for _ in range(3):
+        if ib.isConnected():
+            return {"status": "healthy", "connected": True}
+        await asyncio.sleep(1)
+    
+    raise HTTPException(status_code=503, detail="Not connected to IB Gateway")
+
+@app.get("/positions")
+def get_positions():
+    if not ib.isConnected():
+        raise HTTPException(status_code=503, detail="Not connected to IB Gateway")
+    return ib.positions()
+
+@app.get("/account")
+def get_account():
+    if not ib.isConnected():
+        raise HTTPException(status_code=503, detail="Not connected to IB Gateway")
+    return ib.accountSummary()
+
+# Generic endpoint to execute flex queries or other logic can be added here
+EOT
 }
 
 # Enable required APIs in project
@@ -407,10 +482,14 @@ resource "google_cloud_run_v2_service" "n8n_ibkr" {
       }
     }
 
-    # IB Gateway sidecar container
+    # IB Gateway container (gnzsnz/ib-gateway)
     containers {
       name  = "ib-gateway"
-      image = "voyz/ibeam:latest"
+      image = "gnzsnz/ib-gateway:latest"
+
+      ports {
+        container_port = 4001
+      }
 
       resources {
         limits = {
@@ -420,7 +499,7 @@ resource "google_cloud_run_v2_service" "n8n_ibkr" {
       }
 
       env {
-        name = "IBEAM_ACCOUNT"
+        name = "TWS_USERID"
         value_source {
           secret_key_ref {
             secret  = google_secret_manager_secret.ib_gateway_tws_userid.secret_id
@@ -430,7 +509,7 @@ resource "google_cloud_run_v2_service" "n8n_ibkr" {
       }
 
       env {
-        name = "IBEAM_PASSWORD"
+        name = "TWS_PASSWORD"
         value_source {
           secret_key_ref {
             secret  = google_secret_manager_secret.ib_gateway_tws_password.secret_id
@@ -440,8 +519,71 @@ resource "google_cloud_run_v2_service" "n8n_ibkr" {
       }
 
       env {
-        name  = "IBEAM_PAGE_ROOT"
-        value = "https://www.interactivebrokers.ca" 
+        name  = "TRADING_MODE"
+        value = "live" # Default to paper, can be parameterized if needed
+      }
+
+      env {
+        name  = "IBC_INI"
+        value = "/root/ibc/config.ini"
+      }
+
+      env {
+        name  = "TWS_SETTINGS_PATH"
+        value = "/root/Jts"
+      }
+
+      env {
+        name  = "READ_ONLY_API"
+        value = var.ib_gateway_read_only_api ? "yes" : "no"
+      }
+
+      startup_probe {
+        tcp_socket {
+          port = 4001
+        }
+        initial_delay_seconds = 15
+        timeout_seconds      = 1
+        period_seconds       = 5
+        failure_threshold    = 60
+      }
+      
+      # Disable VNC to save resources if not needed, or keep it for debugging
+      # env {
+      #   name  = "XVFB_IGNORE_XAUTH"
+      #   value = "1"
+      # }
+    }
+
+    # HTTP Bridge container (Python + ib_insync)
+    containers {
+      name  = "ib-http-bridge"
+      image = "python:3.11-slim"
+
+      resources {
+        limits = {
+          cpu    = "1000m"
+          memory = "512Mi"
+        }
+      }
+
+      env {
+        name  = "BRIDGE_SCRIPT_CONTENT"
+        value = local.ib_bridge_script
+      }
+
+      # Install dependencies and run the bridge script
+      command = ["/bin/sh", "-c"]
+      args    = ["pip install fastapi uvicorn ib_insync && echo \"$BRIDGE_SCRIPT_CONTENT\" > bridge.py && uvicorn bridge:app --host 0.0.0.0 --port 5000"]
+      
+      startup_probe {
+        tcp_socket {
+          port = 5000
+        }
+        initial_delay_seconds = 10
+        timeout_seconds      = 1
+        period_seconds       = 5
+        failure_threshold    = 30
       }
     }
   }
