@@ -161,16 +161,6 @@ variable "ib_gateway_read_only_api" {
   default     = false
 }
 
-variable "ib_gateway_trading_mode" {
-  description = "Trading mode: 'paper' or 'live'"
-  type        = string
-  default     = "paper"
-  validation {
-    condition     = contains(["paper", "live"], var.ib_gateway_trading_mode)
-    error_message = "Trading mode must be either 'paper' or 'live'."
-  }
-}
-
 variable "ib_gateway_cpu" {
   description = "CPU allocation for IB Gateway container (e.g., '1', '2', '1000m')"
   type        = string

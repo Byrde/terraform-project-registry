@@ -13,9 +13,6 @@ locals {
     "sheets.googleapis.com",
     "tasks.googleapis.com",
   ]
-
-  # IB Gateway port based on trading mode (4001 for paper, 7497 for live)
-  ib_gateway_port = var.ib_gateway_trading_mode == "live" ? 7497 : 4001
 }
 
 # Enable required APIs in project
@@ -413,7 +410,7 @@ resource "google_cloud_run_v2_service" "n8n_ibkr" {
     # IB Gateway sidecar container
     containers {
       name  = "ib-gateway"
-      image = "gnzsnz/ib-gateway:${var.ib_gateway_version}"
+      image = "voyz/ibeam:latest"
 
       resources {
         limits = {
@@ -423,7 +420,7 @@ resource "google_cloud_run_v2_service" "n8n_ibkr" {
       }
 
       env {
-        name = "TWS_USERID"
+        name = "IBEAM_ACCOUNT"
         value_source {
           secret_key_ref {
             secret  = google_secret_manager_secret.ib_gateway_tws_userid.secret_id
@@ -433,7 +430,7 @@ resource "google_cloud_run_v2_service" "n8n_ibkr" {
       }
 
       env {
-        name = "TWS_PASSWORD"
+        name = "IBEAM_PASSWORD"
         value_source {
           secret_key_ref {
             secret  = google_secret_manager_secret.ib_gateway_tws_password.secret_id
@@ -443,54 +440,8 @@ resource "google_cloud_run_v2_service" "n8n_ibkr" {
       }
 
       env {
-        name  = "PORT"
-        value = tostring(local.ib_gateway_port)
-      }
-
-      env {
-        name  = "TWS_PORT"
-        value = tostring(local.ib_gateway_port)
-      }
-
-      env {
-        name  = "CPGW_PORT"
-        value = tostring(local.ib_gateway_port)
-      }
-
-      env {
-        name  = "READ_ONLY_API"
-        value = tostring(var.ib_gateway_read_only_api)
-      }
-
-      env {
-        name  = "TRADING_MODE"
-        value = var.ib_gateway_trading_mode
-      }
-
-      dynamic "env" {
-        for_each = var.ib_gateway_second_factor_device != "" ? [1] : []
-        content {
-          name  = "SecondFactorDevice"
-          value = var.ib_gateway_second_factor_device
-        }
-      }
-
-      env {
-        name  = "ReloginAfterSecondFactorAuthenticationTimeout"
-        value = var.ib_gateway_relogin_after_2fa_timeout
-      }
-
-      env {
-        name  = "SecondFactorAuthenticationExitInterval"
-        value = tostring(var.ib_gateway_2fa_timeout_seconds)
-      }
-
-      dynamic "env" {
-        for_each = var.ib_gateway_debug_logs ? [1] : []
-        content {
-          name  = "LOG_LEVEL"
-          value = "DEBUG"
-        }
+        name  = "IBEAM_PAGE_ROOT"
+        value = "https://www.interactivebrokers.ca" 
       }
     }
   }
