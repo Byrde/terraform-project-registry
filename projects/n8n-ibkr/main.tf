@@ -487,10 +487,8 @@ resource "google_cloud_run_v2_service" "n8n_ibkr" {
       name  = "ib-gateway"
       image = "gnzsnz/ib-gateway:latest"
 
-      ports {
-        container_port = 4001
-      }
-
+      # No exposed ports for sidecar - only accessible via localhost
+      
       resources {
         limits = {
           cpu    = var.ib_gateway_cpu
@@ -574,7 +572,7 @@ resource "google_cloud_run_v2_service" "n8n_ibkr" {
 
       # Install dependencies and run the bridge script
       command = ["/bin/sh", "-c"]
-      args    = ["pip install fastapi uvicorn ib_insync && echo \"$BRIDGE_SCRIPT_CONTENT\" > bridge.py && uvicorn bridge:app --host 0.0.0.0 --port 5000"]
+      args    = ["pip install fastapi uvicorn ib_insync && echo \"$BRIDGE_SCRIPT_CONTENT\" > bridge.py && uvicorn bridge:app --host 127.0.0.1 --port 5000"]
       
       startup_probe {
         tcp_socket {
