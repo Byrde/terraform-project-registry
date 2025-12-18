@@ -1,3 +1,8 @@
+# Get project details
+data "google_project" "current" {
+  project_id = var.project_id
+}
+
 # Local variables
 locals {
   # APIs required for this project
@@ -205,6 +210,14 @@ resource "google_secret_manager_secret_version" "ghcr_token" {
   secret_data = var.ghcr_token
 }
 
+# Grant Artifact Registry service account access to the ghcr token secret
+resource "google_secret_manager_secret_iam_member" "ghcr_token_access" {
+  count     = var.ibkr_bridge_enabled ? 1 : 0
+  secret_id = google_secret_manager_secret.ghcr_token[0].id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:service-${data.google_project.current.number}@gcp-sa-artifactregistry.iam.gserviceaccount.com"
+}
+
 # Artifact Registry remote repository for GitHub Container Registry
 resource "google_artifact_registry_repository" "ghcr_remote" {
   count         = var.ibkr_bridge_enabled ? 1 : 0
@@ -231,7 +244,8 @@ resource "google_artifact_registry_repository" "ghcr_remote" {
 
   depends_on = [
     time_sleep.wait_for_apis,
-    google_secret_manager_secret_version.ghcr_token
+    google_secret_manager_secret_version.ghcr_token,
+    google_secret_manager_secret_iam_member.ghcr_token_access
   ]
 }
 
