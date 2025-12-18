@@ -184,6 +184,27 @@ resource "google_secret_manager_secret_version" "bridge_password" {
   secret_data = var.bridge_password
 }
 
+# Store GitHub token for ghcr.io authentication
+resource "google_secret_manager_secret" "ghcr_token" {
+  count     = var.ibkr_bridge_enabled ? 1 : 0
+  secret_id = "ghcr-token"
+  project   = var.project_id
+
+  replication {
+    auto {}
+  }
+
+  depends_on = [
+    time_sleep.wait_for_apis
+  ]
+}
+
+resource "google_secret_manager_secret_version" "ghcr_token" {
+  count       = var.ibkr_bridge_enabled ? 1 : 0
+  secret      = google_secret_manager_secret.ghcr_token[0].id
+  secret_data = var.ghcr_token
+}
+
 # Artifact Registry remote repository for GitHub Container Registry
 resource "google_artifact_registry_repository" "ghcr_remote" {
   count         = var.ibkr_bridge_enabled ? 1 : 0
@@ -200,10 +221,17 @@ resource "google_artifact_registry_repository" "ghcr_remote" {
         uri = "https://ghcr.io"
       }
     }
+    upstream_credentials {
+      username_password_credentials {
+        username                = "_"
+        password_secret_version = google_secret_manager_secret_version.ghcr_token[0].name
+      }
+    }
   }
 
   depends_on = [
-    time_sleep.wait_for_apis
+    time_sleep.wait_for_apis,
+    google_secret_manager_secret_version.ghcr_token
   ]
 }
 

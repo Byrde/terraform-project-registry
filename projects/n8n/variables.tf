@@ -196,3 +196,10 @@ variable "ibkr_bridge_memory" {
   type        = string
   default     = "512Mi"
 }
+
+variable "ghcr_token" {
+  description = "GitHub token with packages:read scope for pulling images from ghcr.io"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
