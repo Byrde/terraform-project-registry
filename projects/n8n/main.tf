@@ -1,8 +1,3 @@
-# Get project details
-data "google_project" "current" {
-  project_id = var.project_id
-}
-
 # Local variables
 locals {
   # APIs required for this project
@@ -17,7 +12,6 @@ locals {
     "gmail.googleapis.com",
     "sheets.googleapis.com",
     "tasks.googleapis.com",
-    "artifactregistry.googleapis.com",
   ]
 
   # APIs required in WIF project for cross-project operations
@@ -187,66 +181,6 @@ resource "google_secret_manager_secret_version" "bridge_password" {
   count       = var.ibkr_bridge_enabled ? 1 : 0
   secret      = google_secret_manager_secret.bridge_password[0].id
   secret_data = var.bridge_password
-}
-
-# Store GitHub token for ghcr.io authentication
-resource "google_secret_manager_secret" "ghcr_token" {
-  count     = var.ibkr_bridge_enabled ? 1 : 0
-  secret_id = "ghcr-token"
-  project   = var.project_id
-
-  replication {
-    auto {}
-  }
-
-  depends_on = [
-    time_sleep.wait_for_apis
-  ]
-}
-
-resource "google_secret_manager_secret_version" "ghcr_token" {
-  count       = var.ibkr_bridge_enabled ? 1 : 0
-  secret      = google_secret_manager_secret.ghcr_token[0].id
-  secret_data = var.ghcr_token
-}
-
-# Grant Artifact Registry service account access to the ghcr token secret
-resource "google_secret_manager_secret_iam_member" "ghcr_token_access" {
-  count     = var.ibkr_bridge_enabled ? 1 : 0
-  secret_id = google_secret_manager_secret.ghcr_token[0].id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:service-${data.google_project.current.number}@gcp-sa-artifactregistry.iam.gserviceaccount.com"
-}
-
-# Artifact Registry remote repository for GitHub Container Registry
-resource "google_artifact_registry_repository" "ghcr_remote" {
-  count         = var.ibkr_bridge_enabled ? 1 : 0
-  project       = var.project_id
-  location      = var.region
-  repository_id = "ghcr-remote"
-  description   = "Remote repository proxying GitHub Container Registry"
-  format        = "DOCKER"
-  mode          = "REMOTE_REPOSITORY"
-
-  remote_repository_config {
-    docker_repository {
-      custom_repository {
-        uri = "https://ghcr.io"
-      }
-    }
-    upstream_credentials {
-      username_password_credentials {
-        username                = "_"
-        password_secret_version = google_secret_manager_secret_version.ghcr_token[0].name
-      }
-    }
-  }
-
-  depends_on = [
-    time_sleep.wait_for_apis,
-    google_secret_manager_secret_version.ghcr_token,
-    google_secret_manager_secret_iam_member.ghcr_token_access
-  ]
 }
 
 # Cloud SQL PostgreSQL instance
@@ -495,7 +429,7 @@ resource "google_cloud_run_v2_service" "n8n" {
       for_each = var.ibkr_bridge_enabled ? [1] : []
       content {
         name  = "ibkr-bridge"
-        image = "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.ghcr_remote[0].repository_id}/byrde/ibkr-bridge:${var.ibkr_bridge_version}"
+        image = "mallaire77/ibkr-bridge:${var.ibkr_bridge_version}"
 
         resources {
           limits = {
@@ -574,7 +508,6 @@ resource "google_cloud_run_v2_service" "n8n" {
     google_secret_manager_secret_version.ibkr_password,
     google_secret_manager_secret_version.ibkr_totp_secret,
     google_secret_manager_secret_version.bridge_password,
-    google_artifact_registry_repository.ghcr_remote,
   ]
 }
 
