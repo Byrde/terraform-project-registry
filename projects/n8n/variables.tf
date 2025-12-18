@@ -141,7 +141,7 @@ variable "ibkr_bridge_enabled" {
 variable "ibkr_bridge_version" {
   description = "IBKR Bridge Docker image version"
   type        = string
-  default     = "0.2.0"
+  default     = "0.2.3"
 }
 
 variable "ibkr_username" {
