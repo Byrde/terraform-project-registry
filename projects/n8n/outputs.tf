@@ -39,6 +39,21 @@ output "n8n_basic_auth_password" {
   value       = "Use: gcloud secrets versions access latest --secret=n8n-basic-auth-password --project=${var.project_id}"
 }
 
+output "ibkr_bridge_enabled" {
+  description = "Whether IBKR Bridge sidecar is enabled"
+  value       = var.ibkr_bridge_enabled
+}
+
+output "ibkr_bridge_endpoint" {
+  description = "Internal endpoint for IBKR Bridge (accessible from n8n container)"
+  value       = var.ibkr_bridge_enabled ? "http://127.0.0.1:3000" : null
+}
+
+output "ibkr_bridge_mode" {
+  description = "IBKR Bridge trading mode"
+  value       = var.ibkr_bridge_enabled ? (var.ibkr_paper_trading ? "paper" : "live") : null
+}
+
 output "oauth_redirect_uri" {
   description = "OAuth redirect URI for n8n Google integration (use when creating OAuth credentials)"
   value       = "${google_cloud_run_v2_service.n8n.uri}/rest/oauth2-credential/callback"

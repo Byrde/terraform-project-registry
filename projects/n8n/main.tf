@@ -122,6 +122,67 @@ resource "google_secret_manager_secret_version" "n8n_basic_auth_password" {
   secret_data = random_password.n8n_basic_auth_password.result
 }
 
+# IBKR Bridge secrets (conditional on bridge being enabled)
+resource "google_secret_manager_secret" "ibkr_password" {
+  count     = var.ibkr_bridge_enabled ? 1 : 0
+  secret_id = "ibkr-password"
+  project   = var.project_id
+
+  replication {
+    auto {}
+  }
+
+  depends_on = [
+    time_sleep.wait_for_apis
+  ]
+}
+
+resource "google_secret_manager_secret_version" "ibkr_password" {
+  count       = var.ibkr_bridge_enabled ? 1 : 0
+  secret      = google_secret_manager_secret.ibkr_password[0].id
+  secret_data = var.ibkr_password
+}
+
+resource "google_secret_manager_secret" "ibkr_totp_secret" {
+  count     = var.ibkr_bridge_enabled && !var.ibkr_paper_trading ? 1 : 0
+  secret_id = "ibkr-totp-secret"
+  project   = var.project_id
+
+  replication {
+    auto {}
+  }
+
+  depends_on = [
+    time_sleep.wait_for_apis
+  ]
+}
+
+resource "google_secret_manager_secret_version" "ibkr_totp_secret" {
+  count       = var.ibkr_bridge_enabled && !var.ibkr_paper_trading ? 1 : 0
+  secret      = google_secret_manager_secret.ibkr_totp_secret[0].id
+  secret_data = var.ibkr_totp_secret
+}
+
+resource "google_secret_manager_secret" "bridge_password" {
+  count     = var.ibkr_bridge_enabled ? 1 : 0
+  secret_id = "ibkr-bridge-password"
+  project   = var.project_id
+
+  replication {
+    auto {}
+  }
+
+  depends_on = [
+    time_sleep.wait_for_apis
+  ]
+}
+
+resource "google_secret_manager_secret_version" "bridge_password" {
+  count       = var.ibkr_bridge_enabled ? 1 : 0
+  secret      = google_secret_manager_secret.bridge_password[0].id
+  secret_data = var.bridge_password
+}
+
 # Cloud SQL PostgreSQL instance
 resource "google_sql_database_instance" "n8n_db" {
   name             = "n8n-db-instance"
@@ -195,6 +256,28 @@ resource "google_secret_manager_secret_iam_member" "encryption_key_access" {
 
 resource "google_secret_manager_secret_iam_member" "basic_auth_password_access" {
   secret_id = google_secret_manager_secret.n8n_basic_auth_password.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.n8n_service_account.email}"
+}
+
+# IBKR Bridge secret access (conditional)
+resource "google_secret_manager_secret_iam_member" "ibkr_password_access" {
+  count     = var.ibkr_bridge_enabled ? 1 : 0
+  secret_id = google_secret_manager_secret.ibkr_password[0].id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.n8n_service_account.email}"
+}
+
+resource "google_secret_manager_secret_iam_member" "ibkr_totp_secret_access" {
+  count     = var.ibkr_bridge_enabled && !var.ibkr_paper_trading ? 1 : 0
+  secret_id = google_secret_manager_secret.ibkr_totp_secret[0].id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.n8n_service_account.email}"
+}
+
+resource "google_secret_manager_secret_iam_member" "bridge_password_access" {
+  count     = var.ibkr_bridge_enabled ? 1 : 0
+  secret_id = google_secret_manager_secret.bridge_password[0].id
   role      = "roles/secretmanager.secretAccessor"
   member    = "serviceAccount:${google_service_account.n8n_service_account.email}"
 }
@@ -340,6 +423,80 @@ resource "google_cloud_run_v2_service" "n8n" {
         }
       }
     }
+
+    # IBKR Bridge sidecar container (conditional)
+    dynamic "containers" {
+      for_each = var.ibkr_bridge_enabled ? [1] : []
+      content {
+        name  = "ibkr-bridge"
+        image = "ghcr.io/byrde/ibkr-bridge:${var.ibkr_bridge_version}"
+
+        resources {
+          limits = {
+            cpu    = var.ibkr_bridge_cpu
+            memory = var.ibkr_bridge_memory
+          }
+        }
+
+        env {
+          name  = "PORT"
+          value = "3000"
+        }
+
+        env {
+          name  = "HOST"
+          value = "127.0.0.1"
+        }
+
+        env {
+          name  = "BRIDGE_USERNAME"
+          value = var.bridge_username
+        }
+
+        env {
+          name = "BRIDGE_PASSWORD"
+          value_source {
+            secret_key_ref {
+              secret  = google_secret_manager_secret.bridge_password[0].secret_id
+              version = "latest"
+            }
+          }
+        }
+
+        env {
+          name  = "IBKR_USERNAME"
+          value = var.ibkr_username
+        }
+
+        env {
+          name = "IBKR_PASSWORD"
+          value_source {
+            secret_key_ref {
+              secret  = google_secret_manager_secret.ibkr_password[0].secret_id
+              version = "latest"
+            }
+          }
+        }
+
+        env {
+          name  = "IBKR_PAPER_TRADING"
+          value = var.ibkr_paper_trading ? "true" : "false"
+        }
+
+        dynamic "env" {
+          for_each = !var.ibkr_paper_trading ? [1] : []
+          content {
+            name = "IBKR_TOTP_SECRET"
+            value_source {
+              secret_key_ref {
+                secret  = google_secret_manager_secret.ibkr_totp_secret[0].secret_id
+                version = "latest"
+              }
+            }
+          }
+        }
+      }
+    }
   }
 
   depends_on = [
@@ -348,6 +505,9 @@ resource "google_cloud_run_v2_service" "n8n" {
     google_secret_manager_secret_version.db_password,
     google_secret_manager_secret_version.n8n_encryption_key,
     google_secret_manager_secret_version.n8n_basic_auth_password,
+    google_secret_manager_secret_version.ibkr_password,
+    google_secret_manager_secret_version.ibkr_totp_secret,
+    google_secret_manager_secret_version.bridge_password,
   ]
 }
 

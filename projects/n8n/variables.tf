@@ -130,3 +130,69 @@ variable "db_version" {
   type        = string
   default     = "POSTGRES_15"
 }
+
+# IBKR Bridge sidecar configuration
+variable "ibkr_bridge_enabled" {
+  description = "Enable IBKR Bridge sidecar container"
+  type        = bool
+  default     = false
+}
+
+variable "ibkr_bridge_version" {
+  description = "IBKR Bridge Docker image version"
+  type        = string
+  default     = "0.2.0"
+}
+
+variable "ibkr_username" {
+  description = "Interactive Brokers username"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "ibkr_password" {
+  description = "Interactive Brokers password"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "ibkr_totp_secret" {
+  description = "TOTP secret for IBKR 2FA (base32 encoded, required for live trading)"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "ibkr_paper_trading" {
+  description = "Enable paper trading mode (disables 2FA requirement)"
+  type        = bool
+  default     = true
+}
+
+variable "bridge_username" {
+  description = "Basic auth username for IBKR Bridge API access"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "bridge_password" {
+  description = "Basic auth password for IBKR Bridge API access"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "ibkr_bridge_cpu" {
+  description = "CPU allocation for IBKR Bridge container"
+  type        = string
+  default     = "1"
+}
+
+variable "ibkr_bridge_memory" {
+  description = "Memory allocation for IBKR Bridge container"
+  type        = string
+  default     = "512Mi"
+}
