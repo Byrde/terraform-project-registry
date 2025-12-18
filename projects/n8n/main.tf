@@ -12,6 +12,7 @@ locals {
     "gmail.googleapis.com",
     "sheets.googleapis.com",
     "tasks.googleapis.com",
+    "artifactregistry.googleapis.com",
   ]
 
   # APIs required in WIF project for cross-project operations
@@ -181,6 +182,29 @@ resource "google_secret_manager_secret_version" "bridge_password" {
   count       = var.ibkr_bridge_enabled ? 1 : 0
   secret      = google_secret_manager_secret.bridge_password[0].id
   secret_data = var.bridge_password
+}
+
+# Artifact Registry remote repository for GitHub Container Registry
+resource "google_artifact_registry_repository" "ghcr_remote" {
+  count         = var.ibkr_bridge_enabled ? 1 : 0
+  project       = var.project_id
+  location      = var.region
+  repository_id = "ghcr-remote"
+  description   = "Remote repository proxying GitHub Container Registry"
+  format        = "DOCKER"
+  mode          = "REMOTE_REPOSITORY"
+
+  remote_repository_config {
+    docker_repository {
+      custom_repository {
+        uri = "https://ghcr.io"
+      }
+    }
+  }
+
+  depends_on = [
+    time_sleep.wait_for_apis
+  ]
 }
 
 # Cloud SQL PostgreSQL instance
@@ -429,7 +453,7 @@ resource "google_cloud_run_v2_service" "n8n" {
       for_each = var.ibkr_bridge_enabled ? [1] : []
       content {
         name  = "ibkr-bridge"
-        image = "ghcr.io/byrde/ibkr-bridge:${var.ibkr_bridge_version}"
+        image = "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.ghcr_remote[0].repository_id}/byrde/ibkr-bridge:${var.ibkr_bridge_version}"
 
         resources {
           limits = {
@@ -508,6 +532,7 @@ resource "google_cloud_run_v2_service" "n8n" {
     google_secret_manager_secret_version.ibkr_password,
     google_secret_manager_secret_version.ibkr_totp_secret,
     google_secret_manager_secret_version.bridge_password,
+    google_artifact_registry_repository.ghcr_remote,
   ]
 }
 
