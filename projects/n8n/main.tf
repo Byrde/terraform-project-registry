@@ -368,9 +368,6 @@ resource "google_cloud_run_v2_service" "n8n" {
     google_secret_manager_secret_version.db_password,
     google_secret_manager_secret_version.n8n_encryption_key,
     google_secret_manager_secret_version.n8n_basic_auth_password,
-    google_secret_manager_secret_version.ibkr_password,
-    google_secret_manager_secret_version.ibkr_totp_secret,
-    google_secret_manager_secret_version.bridge_password,
   ]
 }
 
