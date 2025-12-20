@@ -41,17 +41,7 @@ output "n8n_basic_auth_password" {
 
 output "ibkr_bridge_enabled" {
   description = "Whether IBKR Bridge sidecar is enabled"
-  value       = var.ibkr_bridge_enabled
-}
-
-output "ibkr_bridge_endpoint" {
-  description = "Internal endpoint for IBKR Bridge (accessible from n8n container)"
-  value       = var.ibkr_bridge_enabled ? "http://127.0.0.1:3000" : null
-}
-
-output "ibkr_bridge_mode" {
-  description = "IBKR Bridge trading mode"
-  value       = var.ibkr_bridge_enabled ? (var.ibkr_paper_trading ? "paper" : "live") : null
+  value       = var.ibkr_gateway_enabled
 }
 
 output "oauth_redirect_uri" {

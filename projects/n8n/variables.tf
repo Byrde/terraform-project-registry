@@ -131,68 +131,27 @@ variable "db_version" {
   default     = "POSTGRES_15"
 }
 
-# IBKR Bridge sidecar configuration
-variable "ibkr_bridge_enabled" {
-  description = "Enable IBKR Bridge sidecar container"
+# IBKR Gateway sidecar configuration
+variable "ibkr_gateway_enabled" {
+  description = "Enable IBKR Gateway sidecar container"
   type        = bool
   default     = false
 }
 
-variable "ibkr_bridge_version" {
-  description = "IBKR Bridge Docker image version"
+variable "ibkr_gateway_version" {
+  description = "IBKR Gateway Docker image version"
   type        = string
   default     = "latest"
 }
 
-variable "ibkr_username" {
-  description = "Interactive Brokers username"
-  type        = string
-  default     = ""
-  sensitive   = true
-}
-
-variable "ibkr_password" {
-  description = "Interactive Brokers password"
-  type        = string
-  default     = ""
-  sensitive   = true
-}
-
-variable "ibkr_totp_secret" {
-  description = "TOTP secret for IBKR 2FA (base32 encoded, required for live trading)"
-  type        = string
-  default     = ""
-  sensitive   = true
-}
-
-variable "ibkr_paper_trading" {
-  description = "Enable paper trading mode (disables 2FA requirement)"
-  type        = bool
-  default     = true
-}
-
-variable "bridge_username" {
-  description = "Basic auth username for IBKR Bridge API access"
-  type        = string
-  default     = ""
-  sensitive   = true
-}
-
-variable "bridge_password" {
-  description = "Basic auth password for IBKR Bridge API access"
-  type        = string
-  default     = ""
-  sensitive   = true
-}
-
-variable "ibkr_bridge_cpu" {
-  description = "CPU allocation for IBKR Bridge container"
+variable "ibkr_gateway_cpu" {
+  description = "CPU allocation for IBKR Gateway container"
   type        = string
   default     = "1"
 }
 
-variable "ibkr_bridge_memory" {
-  description = "Memory allocation for IBKR Bridge container"
+variable "ibkr_gateway_memory" {
+  description = "Memory allocation for IBKR Gateway container"
   type        = string
   default     = "512Mi"
 }
