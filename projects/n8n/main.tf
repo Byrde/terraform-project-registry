@@ -345,8 +345,8 @@ resource "google_cloud_run_v2_service" "n8n" {
     dynamic "containers" {
       for_each = var.ibkr_gateway_enabled ? [1] : []
       content {
-        name  = "ibkr-gateway"
-        image = "mallaire77/ibkr-gateway:${var.ibkr_gateway_version}"
+        name  = "ibkr-bridge"
+        image = "mallaire77/ibkr-bridge:${var.ibkr_gateway_version}"
 
         resources {
           limits = {
@@ -363,6 +363,11 @@ resource "google_cloud_run_v2_service" "n8n" {
         env {
           name  = "HOST"
           value = "127.0.0.1"
+        }
+
+        env {
+          name  = "ENABLE_AUTO_AUTH"
+          value = false
         }
       }
     }
