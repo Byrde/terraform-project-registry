@@ -61,7 +61,7 @@ variable "cloud_run_cpu" {
 variable "cloud_run_memory" {
   description = "Memory allocation for Cloud Run container (e.g., '512Mi', '1Gi', '2Gi')"
   type        = string
-  default     = "512Mi"
+  default     = "2048Mi"
 }
 
 # Cloud SQL configuration
