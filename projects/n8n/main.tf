@@ -343,15 +343,15 @@ resource "google_cloud_run_v2_service" "n8n" {
 
     # IBKR Gateway sidecar container (conditional)
     dynamic "containers" {
-      for_each = var.ibkr_gateway_enabled ? [1] : []
+      for_each = var.ibkr_bridge_enabled ? [1] : []
       content {
         name  = "ibkr-bridge"
-        image = "mallaire77/ibkr-bridge:${var.ibkr_gateway_version}"
+        image = "mallaire77/ibkr-bridge:${var.ibkr_bridge_version}"
 
         resources {
           limits = {
-            cpu    = var.ibkr_gateway_cpu
-            memory = var.ibkr_gateway_memory
+            cpu    = var.ibkr_bridge_cpu
+            memory = var.ibkr_bridge_memory
           }
         }
 

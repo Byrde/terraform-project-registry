@@ -132,25 +132,25 @@ variable "db_version" {
 }
 
 # IBKR Gateway sidecar configuration
-variable "ibkr_gateway_enabled" {
+variable "ibkr_bridge_enabled" {
   description = "Enable IBKR Gateway sidecar container"
   type        = bool
   default     = false
 }
 
-variable "ibkr_gateway_version" {
+variable "ibkr_bridge_version" {
   description = "IBKR Gateway Docker image version"
   type        = string
   default     = "latest"
 }
 
-variable "ibkr_gateway_cpu" {
+variable "ibkr_bridge_cpu" {
   description = "CPU allocation for IBKR Gateway container"
   type        = string
   default     = "1"
 }
 
-variable "ibkr_gateway_memory" {
+variable "ibkr_bridge_memory" {
   description = "Memory allocation for IBKR Gateway container"
   type        = string
   default     = "512Mi"
