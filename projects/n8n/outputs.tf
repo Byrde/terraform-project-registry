@@ -41,7 +41,7 @@ output "n8n_basic_auth_password" {
 
 output "ibkr_bridge_enabled" {
   description = "Whether IBKR Bridge sidecar is enabled"
-  value       = var.ibkr_gateway_enabled
+  value       = var.ibkr_bridge_enabled
 }
 
 output "oauth_redirect_uri" {
